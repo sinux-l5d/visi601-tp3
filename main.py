@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import numpy as np
 from scipy.sparse import *
 import matplotlib.pyplot as plt
@@ -126,7 +127,7 @@ class Grid:
         L = coo_matrix((VALS, (LIGS, COLS)), shape=(n, n))
         return L.tocsc()
 
-    #laplacien de la matrice creuse avec methode Dirichlet
+    # laplacien de la matrice creuse avec methode Dirichlet
     def LaplacianD(self):
         """ Retourne le laplacien de Dirichlet et retourne la matrice creuse 
             --> juste changer les -(len.. ) en -4 constant
@@ -157,7 +158,7 @@ class Grid:
         L = coo_matrix((VALS, (LIGS, COLS)), shape=(n, n))
         return L.tocsc()
 
-        #avec Dirichlet
+        # avec Dirichlet
     def implicitEulerD(self, U0, T, dt):
         """"
         A partir du vecteur de valeurs U0, calcule U(T) en itérant des pas dt successifs. 
@@ -174,7 +175,6 @@ class Grid:
 
         return U
 
-
     def vectorToImage(self, V):
         img = np.zeros((self.nbrow, self.nbcol))
         K = self.index.keys()
@@ -187,7 +187,7 @@ class Grid:
     def sources(self, H):
         U0 = np.zeros(self.size())
         for i, j in H:
-            U0[self.size() * (i-1) + j] = 1
+            U0[self.index[i, j]] = 1
         return U0
 
     # return U0 where its value is 1 on its boundary pixels
@@ -201,7 +201,7 @@ class Grid:
 
         return U0
 
-#ne fonctionne pas./.. pourquoi ??
+# ne fonctionne pas./.. pourquoi ??
     def gradX(self):
         # POUR LES X :
         # on a 4 cas :
@@ -216,8 +216,8 @@ class Grid:
         VALS = []  # les valeurs des coefficients
 
         # on parcourt les indices
-        for i in range (n):
-            #on recupere les pixels 
+        for i in range(n):
+            # on recupere les pixels
             pixelsous = self.getIndex(self.I[i], self.J[i]-1)
             pixelsur = self.getIndex(self.I[i], self.J[i]+1)
             # on verifie qu'ils sont bien dans omega
@@ -266,8 +266,8 @@ class Grid:
         VALS = []  # les valeurs des coefficients
 
         # on parcourt les indices
-        for i in range (n):
-        #on recupere les pixels 
+        for i in range(n):
+            # on recupere les pixels
             pixelsous = self.getIndex(self.I[i]-1, self.J[i])
             pixelsur = self.getIndex(self.I[i]+1, self.J[i])
             # on calcule les voisins de l'indice
@@ -303,29 +303,31 @@ class Grid:
         L = coo_matrix((VALS, (LIGS, COLS)), shape=(n, n))
         return L.tocsc()
 
-    #ne fonctioone pas : cf transfert avec sqrt dans q4 qui ne fonctionne pas ...
+    # ne fonctioone pas : cf transfert avec sqrt dans q4 qui ne fonctionne pas ...
     def direction(self, U):
         gradU = (self.gradX()*U, self.gradY()*U)
         # print(f'{gradU=}')
         # return -1 * gradU / np.sqrt(np.multiply())
         return gradU
 
-    #deuxieme methode: on calcule la direction du gradient et on append avec les racines carrées direction ici
+    # deuxieme methode: on calcule la direction du gradient et on append avec les racines carrées direction ici
     def direction2(self, U):
         vx = []
         vy = []
         xx = self.gradX()*U
         xy = self.gradY()*U
         for k in range(len(xx)):
-            vx.append(-xx[k]/ (sqrt(np.multiply(xx[k], xx[k]) + np.multiply(xy[k], xy[k]))))
-            vy.append(-xy[k]/ (sqrt(np.multiply(xx[k], xx[k]) + np.multiply(xy[k], xy[k]))))
+            vx.append(-xx[k] / (sqrt(np.multiply(xx[k], xx[k]) +
+                      np.multiply(xy[k], xy[k]))))
+            vy.append(-xy[k] / (sqrt(np.multiply(xx[k], xx[k]) +
+                      np.multiply(xy[k], xy[k]))))
         return vx, vy
 
     def divergence(self, vx, vy):
         return np.sum(vx) + np.sum(vy)
 
     # Ecrivez la méthode Grid.poisson qui résoud l’équation précédente. On peut utiliser la méthode PLU, par exemple via scipy.linalg.splu
-    #ca marche paaaaas 
+    # ca marche paaaaas
     def poisson(self, B):
         # print(f'{b=}')
         lap = self.Laplacian()
@@ -348,36 +350,34 @@ class Grid:
         d = dbis - mini
         return d
 
-    def heatMethod( self, U0, Lap='Neumann', T=100, dt=10 ):
-        if ( Lap == 'Neumann' ):
+    def heatMethod(self, U0, Lap='Neumann', T=100, dt=10):
+        if (Lap == 'Neumann'):
             self.L = self.Laplacian()
             U = self.implicitEuler(U0, T, dt)
             ux, vx = self.direction2(U)
-            B = self.divergence( ux, vx )
-            D = self.poisson( B )
-            
+            B = self.divergence(ux, vx)
+            D = self.poisson(B)
+
         else:
             self.L = self.Laplacian()
             U = self.implicitEulerD(U0, T, dt)
             ux, vx = self.direction2(U)
-            B = self.divergence( ux, vx )
-            D = self.poissonD( B )
+            B = self.divergence(ux, vx)
+            D = self.poissonD(B)
         return D
 
 
-
-
-#pour la question V
+# pour la question V
 # n est le nombre de lignes de niveaux visibles, width est leur largeur.
-def transformDistance( D, n = 50, width = 0.2 ):
+def transformDistance(D, n=50, width=0.2):
     TD = D.copy()
-    M  = D.max()
-    E  = M / n
-    for i in range( D.shape[0]):
+    M = D.max()
+    E = M / n
+    for i in range(D.shape[0]):
         v = D[i] / E
         e = v-floor(v)
-        if ( e < width ):
-            TD[ i ] = 1.5*M
+        if (e < width):
+            TD[i] = 1.5*M
     return TD
 
 
@@ -388,7 +388,6 @@ def getG():
 
 
 def q1():
-    ...
     # test 1: pour charger une des images
     # load color image
     # img = mpimg.imread('exemple-1.png')
@@ -450,14 +449,14 @@ def q3():
     plt.show()
 
 
-#fonctionne passssss 
+# fonctionne passssss
 def q4():
     G = getG()
     U0 = G.sources([(1, 1)])
     U = G.implicitEuler(U0, 1000, 100)  # T=1000 recuperer U ?????
     Vx, Vy = G.direction(U)
 
-    N = np.sqrt(np.multiply(Vx, Vx), np.multiply(Vy,Vy))
+    N = np.sqrt(np.multiply(Vx, Vx), np.multiply(Vy, Vy))
     Yx = -1.0 * Vx / N
     Yy = -1.0 * Vy / N
 
@@ -468,8 +467,10 @@ def q4():
     plt.imshow(visu_VY, cmap='viridis', vmin=-1., vmax=1.)
     plt.show()
 
-#fonctionne : changeemlnt d'utilisation de direction (on passe sur direction2)
-#donc les gradX et gradY fonctionnent bien 
+# fonctionne : changeemlnt d'utilisation de direction (on passe sur direction2)
+# donc les gradX et gradY fonctionnent bien
+
+
 def q4Test2():
     G = getG()
     U0 = G.sources([(1, 1)])
@@ -482,39 +483,43 @@ def q4Test2():
     plt.imshow(visu_VY, cmap='viridis', vmin=-1., vmax=1.)
     plt.show()
 
+
 def q4bis():
     G = getG()
     U0 = G.sources([(1, 1)])
     U = G.implicitEuler(U0, 100, 100)
     ux, vx = G.direction2(U)
-    B = G.divergence( ux, vx )
-    D = G.poisson( B )
-    visu_D = G.vectorToImage( D )
-    plt.imshow(visu_D,cmap='hot', vmin=-1., vmax=1.)
+    B = G.divergence(ux, vx)
+    D = G.poisson(B)
+    visu_D = G.vectorToImage(D)
+    plt.imshow(visu_D, cmap='hot', vmin=-1., vmax=1.)
     plt.show()
 
-#marche pas car poisson fonctionne pas ... why ? j'en sais rien 
+# marche pas car poisson fonctionne pas ... why ? j'en sais rien
+
+
 def q5():
     img = mpimg.imread('exemple-4.png')
     red = img[:, :, 0]
-    G= Grid(red)
-    U0 = G.sources([(1, 1)])
-    U = G.implicitEulerD(U0, 100, 100)
+    G = Grid(red)
+    U0 = G.sources([(200, 200)])
+    U = G.implicitEuler(U0, 100, 100)
     ux, vx = G.direction2(U)
-    B = G.divergence( ux, vx )
-    D = G.poissonD( B )
+    B = G.divergence(ux, vx)
+    D = G.poisson(B)
     D_bis = transformDistance(D)
-    visu_D = G.vectorToImage( D_bis )
-    plt.imshow(visu_D,cmap='hot', vmin=-1., vmax=1.)
+    visu_D = G.vectorToImage(D_bis)
+    plt.imshow(visu_D, cmap='hot')
     plt.show()
+
 
 def q6():
     G = getG()
     U0 = G.sources([(1, 1)])
-    D = G.heatMethod(U0,'Neumann',1000., 100.)
-    TD = transformDistance(D,50,0.2)
-    visu_TD = G.vectorToImage( TD )
-    plt.imshow(visu_TD,cmap='hot')
+    D = G.heatMethod(U0, 'Neumann', 1000., 100.)
+    TD = transformDistance(D, 50, 0.2)
+    visu_TD = G.vectorToImage(TD)
+    plt.imshow(visu_TD, cmap='hot')
     plt.show()
 
 
@@ -525,8 +530,8 @@ def main():
     #  q4()
     # q4Test2()
     # q4bis()
-    # q5()
-    q6()
+    q5()
+    # q6()
     # print(G.boundary())
 
 
